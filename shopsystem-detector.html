@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 Shopsystem Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f2f4f8;
+    --surface: #ffffff;
+    --surface2: #eef0f6;
+    --border: #d8dce8;
+    --green: #1a9e5c;
+    --yellow: #d4900a;
+    --blue: #2563eb;
+    --red: #dc2626;
+    --purple: #7c3aed;
+    --t1: #111827;
+    --t2: #4b5470;
+    --t3: #9399b2;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--t1);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.008) 2px,
+      rgba(0,0,0,0.008) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    max-width: 680px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  h1 span { color: var(--green); }
+
+  .subtitle {
+    font-size: 0.9375rem;
+    color: var(--t2);
+    line-height: 1.7;
+    margin-bottom: 40px;
+    max-width: 50ch;
+  }
+
+  /* ── Drag button ── */
+  .drag-zone {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+    margin-bottom: 28px;
+    transition: border-color .2s;
+  }
+  .drag-zone:hover { border-color: var(--green); }
+
+  .drag-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--t3);
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .bookmarklet-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px 22px;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--t1);
+    text-decoration: none;
+    cursor: grab;
+    transition: border-color .2s, transform .15s, box-shadow .2s;
+    user-select: none;
+  }
+  .bookmarklet-btn:hover {
+    border-color: var(--green);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(26,158,92,0.15);
+  }
+  .bookmarklet-btn:active { cursor: grabbing; transform: scale(0.97); }
+
+  .drag-hint {
+    font-size: 0.775rem;
+    color: var(--t3);
+    margin-top: 12px;
+    font-family: var(--mono);
+  }
+
+  /* ── Platforms grid ── */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--t3);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .platforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 32px;
+  }
+
+  .plat {
+    font-family: var(--mono);
+    font-size: 0.725rem;
+    color: var(--t2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 9px;
+  }
+
+  /* ── Code block ── */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--t3);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--t2);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .copy-btn:hover { color: var(--green); border-color: var(--green); }
+
+  .code-body {
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--t2);
+    line-height: 1.7;
+    overflow-x: auto;
+    word-break: break-all;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .code-body::-webkit-scrollbar { width: 4px; height: 4px; }
+  .code-body::-webkit-scrollbar-track { background: transparent; }
+  .code-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <h1>Shopsystem<span>Detector</span><br>— identify shop systems for e-commerce shops.</h1>
+  <p class="subtitle">Drag the button below to your Chrome bookmarks bar. Then click it on any e-commerce site to detect the platform.</p>
+
+  <p class="subtitle" style="margin-top:-24px;margin-bottom:40px;font-size:0.825rem;">⚠️ Detection is based on heuristics and may not always be accurate. Results can vary or be incorrect, especially on heavily customised or headless storefronts.<br/>Visit different pages of a shop (product pages, checkout) to get better results.</p>
+
+  <div class="drag-zone">
+    <span class="drag-label">① Drag this to your bookmarks bar</span>
+    <a class="bookmarklet-btn" id="bookmarkletLink" href="PLACEHOLDER" title="ShopDetect">
+      🛒 Shopsystem Detector
+    </a>
+  </div>
+
+  <span class="section-label">Detects multiple platforms</span>
+  <div class="platforms">
+    <span class="plat">Shopify</span>
+    <span class="plat">Shopware 5/6</span>
+    <span class="plat">Magento 1/2</span>
+    <span class="plat">WooCommerce</span>
+    <span class="plat">PrestaShop</span>
+    <span class="plat">BigCommerce</span>
+    <span class="plat">OXID</span>
+    <span class="plat">Demandware / SFCC</span>
+    <span class="plat">SAP Hybris</span>
+    <span class="plat">VTEX</span>
+    <span class="plat">OpenCart</span>
+	<span class="plat">SCAYLE</span>
+    <span class="plat">Sylius</span>
+    <span class="plat">Spryker</span>
+    <span class="plat">Wix Stores</span>
+    <span class="plat">Squarespace</span>
+    <span class="plat">Ecwid</span>
+    <span class="plat">Weebly</span>
+    <span class="plat">CS-Cart</span>
+    <span class="plat">osCommerce</span>
+    <span class="plat">ZenCart</span>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-title">Raw Bookmarklet Code<br/>you may need to need to add <strong>javascript:</strong> manually at the beginning</span>
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+    <div class="code-body" id="codeDisplay"></div>
+  </div>
+</div>
+
+<script>
+function shopDetectorBookmarklet() {
+
+  if (document.getElementById('__shopdetect__')) {
+    document.getElementById('__shopdetect__').remove();
+    return;
+  }
+
+  var html     = (document.documentElement.innerHTML || '').toLowerCase();
+  var scripts  = Array.from(document.querySelectorAll('script[src]')).map(function(s){ return (s.src||'').toLowerCase(); });
+  var metas    = Array.from(document.querySelectorAll('meta')).map(function(m){ return ((m.name||'')+'|'+(m.content||'')+'|'+(m.getAttribute('property')||'')).toLowerCase(); });
+  var links    = Array.from(document.querySelectorAll('link[href]')).map(function(l){ return (l.href||'').toLowerCase(); });
+  var cookies  = (document.cookie || '').toLowerCase();
+  var allSrc   = scripts.concat(links).join(' ');
+  var win      = window;
+
+  // Helpers
+  function hasWin(k)   { try { return typeof win[k] !== 'undefined'; } catch(e) { return false; } }
+  function inHTML(s)   { return html.indexOf(s) > -1; }
+  function inSrc(s)    { return allSrc.indexOf(s) > -1; }
+  function inCookie(s) { return cookies.indexOf(s) > -1; }
+  function score(checks) {
+    var s = 0;
+    checks.forEach(function(c) { if (c) s++; });
+    return s;
+  }
+
+  var platforms = [];
+
+  function check(name, color, emoji, checks, notes) {
+    var sc = score(checks);
+    if (sc > 0) platforms.push({ name: name, color: color, emoji: emoji, score: sc, max: checks.length, notes: notes || [] });
+  }
+
+  // ── Shopify ──
+  check('Shopify', '#95BF47', '🟢', [
+    hasWin('Shopify'),
+    inSrc('cdn.shopify.com'),
+    inSrc('shopify.com/s/files'),
+    inHTML('shopify.theme'),
+    inHTML('shopify-analytics'),
+    inCookie('_shopify')
+  ], []);
+
+  // ── Shopware 6 ──
+  check('Shopware 6', '#189EFF', '🔵', [
+    hasWin('shopware'),
+	inHTML('shopware'),
+    inHTML('sw-plugin'),
+    inHTML('storefront/dist/storefront'),
+    inSrc('storefront/dist'),
+    inHTML('shopware-6'),
+	inHTML('_sw6'),
+    inHTML('"sw-context"')
+  ], []);
+
+  // ── Shopware 5 ──
+  check('Shopware 5', '#0A9ADA', '🔵', [
+    inHTML('shopware5'),
+    inHTML('shopware.config'),
+	inHTML('_sw5'),
+    inHTML('swScrollbar')
+  ], []);
+
+  // ── Magento 2 ──
+  check('Magento 2', '#F26322', '🟠', [
+    hasWin('require') && inHTML('magento_'),
+    inHTML('data-mage-init'),
+    inHTML('mage/cookies'),
+    inHTML('magento2'),
+    inCookie('mage-cache'),
+    inHTML('"magento":')
+  ], []);
+
+  // ── Magento 1 ──
+  check('Magento 1', '#F26322', '🟠', [
+    hasWin('Mage'),
+    inHTML('mage/cookies.js'),
+    inHTML('mage1'),
+  ], []);
+
+  // ── WooCommerce ──
+  check('WooCommerce', '#7F54B3', '🟣', [
+    hasWin('wc_cart_params') || hasWin('woocommerce_params'),
+    inHTML('woocommerce'),
+    inSrc('woocommerce'),
+    inHTML('wc-add-to-cart'),
+    inCookie('woocommerce'),
+    inHTML('wp-content/plugins/woocommerce'),
+    inHTML('class="woocommerce')
+  ], []);
+
+  // ── WordPress (generic, no WooCommerce) ──
+  if (score([
+    inSrc('wp-content'),
+    inSrc('wp-includes'),
+    inHTML('wp-content'),
+    inHTML('wp-includes'),
+    hasWin('wp')
+  ]) >= 2 && !platforms.find(function(p){ return p.name === 'WooCommerce'; })) {
+    platforms.push({ name: 'WordPress', color: '#21759B', emoji: '🔷', score: 1, max: 1, notes: ['CMS only — no shop detected'] });
+  }
+
+  // ── PrestaShop ──
+  check('PrestaShop', '#DF0067', '🔴', [
+    hasWin('prestashop'),
+    inHTML('prestashop'),
+    inCookie('prestashop'),
+    inHTML('prestashop.version')
+  ]);
+
+  // ── BigCommerce ──
+  check('BigCommerce', '#34313F', '⚫', [
+    hasWin('BCData') || hasWin('BCAnalytics'),
+    inSrc('cdn.bigcommerce.com'),
+    inHTML('bigcommerce'),
+    inCookie('SHOP_SESSION_TOKEN')
+  ]);
+
+  // ── OXID ──
+  check('OXID eShop', '#007CC2', '🔵', [
+    inHTML('oxid'),
+    inHTML('oxideshop'),
+    inSrc('out/basic'),
+    inHTML('oxlogid')
+  ]);
+
+  // ── Salesforce Commerce Cloud / Demandware ──
+  check('Salesforce CC', '#00A1E0', '☁️', [
+    hasWin('dw'),
+    inHTML('demandware'),
+    inHTML('sfcc'),
+    inSrc('dw.ac'),
+    inHTML('dwquery'),
+    inHTML('salesforcecommercecloud'),
+    inHTML('dw-ajax-call')
+  ]);
+
+  // ── SAP Hybris / Commerce ──
+  check('SAP Commerce', '#008FD3', '🔵', [
+    inHTML('hybris'),
+    inHTML('_s.sap.com'),
+    inHTML('hybrisplatform'),
+    inHTML('sapcommerce')
+  ]);
+
+  // ── VTEX ──
+  check('VTEX', '#F71963', '🔴', [
+    hasWin('vtex') || hasWin('vtexjs'),
+    inHTML('vtex'),
+    inSrc('vteximg.com'),
+    inSrc('vtex.com'),
+    inHTML('janus.vtex.com')
+  ]);
+
+  // ── OpenCart ──
+  check('OpenCart', '#32BFFF', '🔵', [
+    inHTML('opencart'),
+    inHTML('route=common/home'),
+    inSrc('catalog/view/theme'),
+    inHTML('opencart.js')
+  ]);
+  
+  // ── Scayle ──
+  check('Scayle', '#FF6B35', '🟧', [
+    hasWin('scayle') || hasWin('SCAYLE'),
+	inSrc('scayle'),
+    inSrc('scayle.cloud'),
+    inHTML('scayle.cloud'),
+    inHTML('scayle-storefront'),
+    inHTML('@scayle/'),
+    inHTML('storefront-api.scayle'),
+    inHTML('data-scayle')
+  ]);
+
+  // ── Sylius ──
+  check('Sylius', '#1EB8E6', '🔵', [
+    inHTML('sylius'),
+    inSrc('sylius'),
+    inHTML('sylius-cart'),
+    inHTML('sylius/resources')
+  ]);
+
+  // ── Spryker ──
+  check('Spryker', '#00A3E0', '🔵', [
+    inHTML('spryker'),
+    inSrc('spryker'),
+    inHTML('spryker-shop')
+  ]);
+
+  // ── Wix Stores ──
+  check('Wix Stores', '#FAAD4F', '🟡', [
+    hasWin('wixBiSession'),
+    inSrc('wixstatic.com'),
+    inHTML('wix.com'),
+    inHTML('wixstores')
+  ]);
+
+  // ── Squarespace ──
+  check('Squarespace', '#222222', '⬛', [
+    inHTML('squarespace'),
+    inSrc('squarespace.com'),
+    inSrc('static1.squarespace.com'),
+    inHTML('squarespace-commerce')
+  ]);
+
+  // ── Ecwid ──
+  check('Ecwid', '#FF6600', '🟠', [
+    hasWin('Ecwid') || hasWin('ecwid'),
+    inHTML('ecwid'),
+    inSrc('ecwid.com'),
+    inHTML('ecwid-shopping-cart')
+  ]);
+
+  // ── Weebly ──
+  check('Weebly', '#3986CA', '🔵', [
+    inHTML('weebly'),
+    inSrc('weebly.com'),
+    inHTML('weebly-store')
+  ]);
+
+  // ── CS-Cart ──
+  check('CS-Cart', '#FF9900', '🟠', [
+    inHTML('cs-cart'),
+    inHTML('cscart'),
+    inSrc('var/skins'),
+    inHTML('fn_url')
+  ]);
+
+  // ── osCommerce ──
+  check('osCommerce', '#5CB8E6', '🔵', [
+    inHTML('oscommerce'),
+    inHTML('osCsid'),
+    inSrc('includes/application_top'),
+    inCookie('osCsid')
+  ]);
+
+  // ── ZenCart ──
+  check('ZenCart', '#BB0000', '🔴', [
+    inHTML('zencart'),
+    inHTML('zen cart'),
+    inCookie('zenid'),
+    inSrc('includes/javascript/zen')
+  ]);
+
+  // Sort by score desc
+  platforms.sort(function(a,b){ return (b.score/b.max) - (a.score/a.max); });
+
+  // ─── Build UI ───
+  var overlay = document.createElement('div');
+  overlay.id = '__shopdetect__';
+
+  var top = platforms.length > 0 ? platforms[0] : null;
+  var confidence = top ? Math.round((top.score / top.max) * 100) : 0;
+
+  var confColor = confidence >= 66 ? '#1a9e5c' : confidence >= 33 ? '#d4900a' : '#dc2626';
+  var confLabel = confidence >= 66 ? 'High confidence' : confidence >= 33 ? 'Possible match' : 'Low signal';
+
+  var othersHTML = '';
+  if (platforms.length > 1) {
+    othersHTML = '<div style="margin-top:14px;padding-top:14px;border-top:1px solid #d8dce8;">'
+      + '<div style="font-family:monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9399b2;margin-bottom:8px;">Also detected</div>'
+      + platforms.slice(1).map(function(p){
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;">'
+            + '<span style="font-size:13px;color:#4b5470;">' + p.emoji + ' ' + p.name + '</span>'
+            + '<span style="font-family:monospace;font-size:11px;color:#9399b2;">'+ Math.round(p.score/p.max*100) +'%</span>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  var mainHTML = top
+    ? '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:6px;">'
+        + '<span style="font-size:2rem;line-height:1;">' + top.emoji + '</span>'
+        + '<div>'
+          + '<div style="font-size:18px;font-weight:600;color:#111827;letter-spacing:-.01em;">' + top.name + '</div>'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-top:5px;">'
+            + '<div style="background:#eef0f6;border-radius:4px;height:5px;width:120px;overflow:hidden;">'
+              + '<div style="background:' + confColor + ';height:100%;width:' + confidence + '%;border-radius:4px;transition:width .4s ease;"></div>'
+            + '</div>'
+            + '<span style="font-family:monospace;font-size:10px;color:' + confColor + ';">' + confLabel + ' (' + confidence + '%)</span>'
+          + '</div>'
+        + '</div>'
+      + '</div>'
+    : '<div style="font-size:15px;color:#4b5470;">No known shop platform detected.<br><span style="font-size:12px;color:#9399b2;">Could be custom-built or headless.</span></div>';
+
+  overlay.innerHTML =
+    '<div id="__shopdetect_box__" style="'
+      + 'position:fixed;bottom:24px;right:24px;z-index:2147483647;'
+      + 'width:320px;'
+      + 'background:#ffffff;'
+      + 'border:1px solid #d8dce8;'
+      + 'border-radius:12px;'
+      + 'padding:18px 20px;'
+      + 'box-shadow:0 8px 32px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.04);'
+      + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;'
+      + 'animation:__sd_slide .25s ease;'
+    + '">'
+    + '<style>@keyframes __sd_slide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}</style>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+      + '<div style="font-family:monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9399b2;">🛒 Shopsystem Detector</div>'
+      + '<button onclick="document.getElementById(\'__shopdetect__\').remove()" style="background:none;border:none;color:#9399b2;cursor:pointer;font-size:14px;padding:0;line-height:1;" title="Close">✕</button>'
+    + '</div>'
+    + mainHTML
+    + othersHTML
+    + '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #d8dce8;font-family:monospace;font-size:9px;color:#9399b2;display:flex;justify-content:space-between;align-items:center;">'
+      + '<span style="color:#d4900a;">⚠️ Results may not be accurate</span>'
+      + '<span>' + window.location.hostname + '</span>'
+    + '</div>'
+  + '</div>';
+
+  document.body.appendChild(overlay);
+}
+
+// ─────────────────────────────────────────────
+//  Build the bookmarklet href
+// ─────────────────────────────────────────────
+var code = '(' + shopDetectorBookmarklet.toString() + ')()';
+var bookmarkletHref = 'javascript:' + encodeURIComponent(code);
+
+document.getElementById('bookmarkletLink').href = bookmarkletHref;
+document.getElementById('codeDisplay').textContent = bookmarkletHref;
+
+document.getElementById('copyBtn').addEventListener('click', function() {
+  navigator.clipboard.writeText(bookmarkletHref).then(function() {
+    document.getElementById('copyBtn').textContent = '✓ Copied!';
+    setTimeout(function(){ document.getElementById('copyBtn').textContent = 'Copy'; }, 2000);
+  });
+});
+</script>
+</body>
+</html>
